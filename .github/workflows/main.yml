@@ -17,7 +17,7 @@ jobs:
       # - Build your application
       # - Run tests
       # - Verify code quality
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
   deploy:
     needs: build-and-test
@@ -29,4 +29,4 @@ jobs:
       # - Deploy infrastructure
       # - Deploy application
       # - Run health checks
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
