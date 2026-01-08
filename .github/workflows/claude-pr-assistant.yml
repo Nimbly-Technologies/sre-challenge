@@ -7,15 +7,9 @@ on:
     types: [opened, assigned]
   pull_request:
     types: [opened, synchronize, reopened]
-  # REMOVED: pull_request_review_comment - triggers on ALL review comments causing cascade cancellations
-  # REMOVED: pull_request_review - triggers on ALL reviews causing cascade cancellations
-  # Users can still @claude in regular PR comments (issue_comment covers PRs)
 
 concurrency:
-  # Separate groups for different event types to prevent interference
   group: claude-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.event_name }}
-  # Only cancel-in-progress for PR events (want latest code reviewed)
-  # Comment/issue events should not cancel each other - each @claude mention deserves a response
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -29,9 +23,9 @@ jobs:
     timeout-minutes: 70
 
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read
 
@@ -47,8 +41,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
-          # This prompt only applies to auto-triggered PRs
-          # @claude mentions will follow the user's instructions
           prompt: |
             Please review this pull request and provide feedback on:
             - Code quality and best practices
@@ -57,9 +49,9 @@ jobs:
             - Security concerns
             - Test coverage
 
-            Use `gh pr comment ${{ github.event.pull_request.number }}` to post your review.
-
           additional_permissions: |
             actions: read
+
+          use_sticky_comment: true
 
           claude_args: '--dangerously-skip-permissions'
