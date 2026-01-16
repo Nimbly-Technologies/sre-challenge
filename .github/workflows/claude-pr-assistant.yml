@@ -5,19 +5,18 @@ on:
     types: [created]
   issues:
     types: [opened, assigned]
-  pull_request:
-    types: [opened, synchronize, reopened]
+  # Only triggers on @claude mentions - no auto-review on PRs
+  # Users can @claude in PR comments (issue_comment covers PRs) or issues
 
 concurrency:
-  group: claude-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.event_name }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: claude-${{ github.event.issue.number }}-${{ github.event_name }}
+  cancel-in-progress: false
 
 jobs:
   claude:
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))) ||
-      (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.actor != 'dependabot[bot]')
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
 
     runs-on: ubuntu-latest
     timeout-minutes: 70
@@ -34,20 +33,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-
-          prompt: |
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
 
           additional_permissions: |
             actions: read
